@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERROR MATRIX - Control Panel</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --brand-green: #609956;
+            --brand-green-light: #f0f7ef;
+            --border-color: #e2e8f0;
+            
+            --critical: #e05252;
+            --high: #e67e22;
+            --medium: #f1c40f;
+            --low: #3498db;
+            
+            --alert-blue: #0284c7;
+            --alert-purple: #7c3aed;
+            --alert-orange: #ea580c;
+        }
+
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --sidebar-bg: #1e293b;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --brand-green-light: #1e2f1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ==========================================================================
+           LIVE LOGIN PAGE STYLES (ERROR MATRIX)
+           ========================================================================== */
+        #login-screen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #050f23;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: flex-end; 
+            align-items: center;
+            padding-right: 8%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #login-screen::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(10, 34, 64, 0.3) 0%, rgba(5, 15, 35, 0.8) 100%);
+            z-index: 1;
+        }
+
+        #matrix-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.92);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 390px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 3;
+            animation: cardAppear 0.6s ease-out;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h2 {
+            font-size: 2rem;
+            color: #0b2545;
+            letter-spacing: 1px;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.88rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.35rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: #0b2545;
+            box-shadow: 0 0 0 3px rgba(11, 37, 69, 0.15);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background-color: #0b2545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .login-btn:hover { background-color: #133966; }
+
+        /* ==========================================================================
+           DASHBOARD SCREEN STYLES
+           ========================================================================== */
+        #dashboard-screen {
+            display: none; 
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            justify-content: space-between;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-icon {
+            background-color: #e0f2fe;
+            color: #0284c7;
+            padding: 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            margin: 1.25rem 0 0.5rem 0.75rem;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.75rem;
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item-icon {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+        }
+
+        .nav-item:hover a, .nav-item.active-link a {
+            background-color: var(--bg-primary);
+        }
+
+        .sidebar-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+            margin-top: auto;
+        }
+
+        .logout-btn { color: #e11d48; cursor: pointer; }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .top-header {
+            background-color: var(--sidebar-bg);
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .header-title h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .header-title p { color: var(--text-muted); font-size: 0.9rem; }
+
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+
+        .theme-toggle-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--card-bg);
+            transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover { background-color: var(--bg-primary); }
+
+        .profile-card { display: flex; align-items: center; gap: 12px; margin-left: 0.5rem; }
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-image: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80');
+            background-size: cover;
+            background-color: #cbd5e1;
+        }
+
+        .profile-info h4 { font-size: 0.9rem; font-weight: 600; }
+        .profile-info p { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
+
+        .content-body {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .sub-panel-view {
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .sub-panel-view.active-panel {
+            display: flex;
+        }
+
+        /* KPI Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .metric-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .metric-value.open { color: #5b9357; }
+        .metric-value.critical { color: var(--critical); }
+        .metric-value.time { color: #2b6cb0; }
+        .metric-value.fixed { color: #2f855a; }
+
+        .metric-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .metric-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        /* Two-Column Setup */
+        .columns-layout {
+            display: grid;
+            grid-template-columns: 7fr 3.5fr;
+            gap: 2rem;
+        }
+
+        .left-column, .right-column { display: flex; flex-direction: column; gap: 2rem; }
+        .section-box { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; transition: background-color 0.3s, border-color 0.3s; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+        .section-header h3 { font-size: 1.1rem; font-weight: 600; }
+        
+        .inline-raise-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            background-color: var(--brand-green-light);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(96, 153, 86, 0.2);
+            transition: all 0.2s;
+        }
+        .inline-raise-btn:hover { opacity: 0.9; }
+        .inline-raise-btn span { font-size: 0.85rem; font-weight: 700; color: var(--brand-green); }
+        .inline-raise-plus {
+            background-color: var(--brand-green);
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Recent Bugs List View */
+        .bug-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .bug-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--bg-primary);
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+            animation: itemFadeIn 0.4s ease-out;
+        }
+        
+        .bug-item:hover {
+            background-color: var(--card-bg);
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+        
+        @keyframes itemFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bug-details { display: flex; align-items: center; gap: 15px; }
+        .bug-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .bug-title { font-size: 0.95rem; font-weight: 600; }
+        .bug-id { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+        
+        .bug-meta { display: flex; align-items: center; gap: 1.25rem; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+        .badge.critical { background-color: #fde8e8; color: var(--critical); }
+        .badge.high { background-color: #fff3e0; color: var(--high); }
+        .badge.medium { background-color: #fef9c3; color: #b7791f; }
+        .badge.low { background-color: #e1f5fe; color: var(--low); }
+        
+        .bug-status { font-size: 0.85rem; color: var(--text-muted); min-width: 80px; text-align: right; }
+
+        /* Action Buttons */
+        .bug-actions {
+            display: flex;
+            gap: 6px;
+            border-left: 1px solid var(--border-color);
+            padding-left: 10px;
+        }
+        .bug-action-btn {
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        .bug-action-btn.edit { background-color: #e2e8f0; color: #475569; }
+        .bug-action-btn.solve { background-color: #d1fae5; color: #065f46; }
+        .bug-action-btn.delete { background-color: #fee2e2; color: #ef4444; }
+        .bug-action-btn:hover { opacity: 0.8; }
+
+        /* Priority Breakdown Box */
+        .priority-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .priority-card { border-left: 4px solid var(--text-muted); padding-left: 0.75rem; }
+        .priority-card.p0 { border-left-color: var(--critical); }
+        .priority-card.p1 { border-left-color: var(--high); }
+        .priority-card.p2 { border-left-color: var(--medium); }
+        .priority-card.p3 { border-left-color: var(--low); }
+        .priority-count { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .priority-title { font-size: 0.85rem; font-weight: 600; }
+        .priority-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+        /* Insights Panel Boxes */
+        .alert-box { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.4; transition: all 0.3s ease; }
+        .alert-box.danger { background-color: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
+        .alert-box.success { background-color: #f0fff4; border: 1px solid #c6f6d5; color: #22543d; }
+        .alert-box-title { font-weight: 700; margin-bottom: 0.25rem; }
+
+        /* Alert Center Component Styles */
+        .alert-center-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .alert-center-item {
+            display: flex;
+            gap: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.85rem;
+            border-radius: 10px;
+            animation: alertSlideIn 0.3s ease-out;
+        }
+
+        @keyframes alertSlideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .alert-center-item.assigned .alert-icon-wrapper { background-color: #e0f2fe; color: var(--alert-blue); }
+        .alert-center-item.closed .alert-icon-wrapper { background-color: #d1fae5; color: var(--brand-green); }
+        .alert-center-item.priority .alert-icon-wrapper { background-color: #f3e8ff; color: var(--alert-purple); }
+        .alert-center-item.deadline .alert-icon-wrapper { background-color: #fee2e2; color: var(--critical); }
+        .alert-center-item.comment .alert-icon-wrapper { background-color: #ffedd5; color: var(--alert-orange); }
+        .alert-center-item.release .alert-icon-wrapper { background-color: #e2e8f0; color: #475569; }
+
+        .alert-content-group { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; }
+        .alert-header-row { display: flex; justify-content: space-between; align-items: center; }
+        .alert-label-title { font-size: 0.84rem; font-weight: 700; color: var(--text-main); }
+        .alert-timestamp { font-size: 0.72rem; color: #94a3b8; }
+        .alert-description-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.35; }
+
+        .footer-sync-notice {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .functional-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .functional-table th, .functional-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .functional-table th {
+            background-color: var(--bg-primary);
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .pulse-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* ==========================================================================
+           MODAL WINDOW INTERFACES & CONFIGURATIONS
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 12px;
+            width: 540px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-header h3 { font-size: 1.2rem; }
+        .modal-close-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); }
+
+        .modal-footer-btns { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-secondary {
+            background: #e2e8f0; color: #1e293b; border: none;
+            padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;
+        }
+        .btn-primary {
+            background: #0b2545; color: white; border: none;
+            padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;
+        }
+
+        .inventory-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+        .inventory-item {
+            padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;
+            background-color: var(--bg-primary);
+        }
+
+        .board-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem; }
+        .board-col { background: var(--bg-primary); border-radius: 8px; padding: 0.75rem; border: 1px solid var(--border-color); }
+        .board-col-title { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.25rem; }
+        .board-card { background: var(--card-bg); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; }
+        
+        .bug-field-item {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+        }
+        .bug-field-item strong { color: var(--text-muted); }
+
+        .chart-visual-container { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+        .chart-row { display: flex; flex-direction: column; gap: 0.25rem; }
+        .chart-label-row { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; }
+        .chart-bar-bg { background-color: var(--bg-primary); height: 12px; border-radius: 6px; width: 100%; overflow: hidden; border: 1px solid var(--border-color); }
+        .chart-bar-fill { height: 100%; width: 0%; transition: width 0.5s ease-out; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <canvas id="matrix-canvas"></canvas>
+
+        <div class="login-card">
+            <div class="login-header">
+                <h2><span>🪲</span> ERROR MATRIX</h2>
+                <p>Cybernetic Terminal Vulnerability System</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Operator Identity</label>
+                    <input type="text" id="username" value="Admin" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Security Cryptokey</label>
+                    <input type="password" id="password" value="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Access Control Clearance</label>
+                    <select id="user-role">
+                        <option value="Admin" selected>Admin</option>
+                        <option value="Tester">Tester</option>
+                        <option value="Developer">Developer</option>
+                    </select>
+                </div>
+                <button type="submit" class="login-btn">Initialize Session</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="dashboard-screen">
+        
+        <aside class="sidebar">
+            <div>
+                <div class="brand-logo" style="cursor: pointer;" onclick="switchDashboardView('overview')">
+                    <span class="brand-icon">🪲</span>
+                    <span>ERROR MATRIX</span>
+                </div>
+                
+                <div class="sidebar-section-title">System Views</div>
+                <ul class="nav-links">
+                    <li class="nav-item active-link" id="nav-overview"><a href="#" onclick="switchDashboardView('overview')"><div class="nav-item-left"><span class="nav-item-icon">📁</span><span>Bug repository</span></div></a></li>
+                    <li class="nav-item"><a href="#" onclick="showProgressBoard()"><div class="nav-item-left"><span class="nav-item-icon">🔄</span><span>Workflow</span></div></a></li>
+                    <li class="nav-item"><a href="#" onclick="showBugsResolved()"><div class="nav-item-left"><span class="nav-item-icon">✅</span><span>Fixed issues</span></div></a></li>
+                    <li class="nav-item"><a href="#" onclick="showStatisticsChartModal()"><div class="nav-item-left"><span class="nav-item-icon">📊</span><span>Error analytics</span></div></a></li>
+                    <li class="nav-item" id="nav-activity"><a href="#" onclick="switchDashboardView('activity-log')"><div class="nav-item-left"><span class="nav-item-icon">📋</span><span>Activity Log</span></div></a></li>
+                    <li class="nav-item" id="nav-users"><a href="#" onclick="switchDashboardView('active-users')"><div class="nav-item-left"><span class="nav-item-icon">👥</span><span>Active Users</span></div></a></li>
+                </ul>
+
+                <div class="sidebar-section-title">Configuration</div>
+                <ul class="nav-links">
+                    <li class="nav-item"><a href="#" onclick="showMyProfile()"><div class="nav-item-left"><span class="nav-item-icon">👤</span><span>My Profile</span></div></a></li>
+                    <li class="nav-item"><a href="#" onclick="showAboutSoftware()"><div class="nav-item-left"><span class="nav-item-icon">ℹ️</span><span>About Software</span></div></a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <ul class="nav-links">
+                    <li class="nav-item"><a href="#" onclick="showSettingsModal()"><div class="nav-item-left"><span class="nav-item-icon">⚙️</span><span>Settings</span></div></a></li>
+                    <li class="nav-item logout-btn"><a href="#" onclick="handleLogout()" style="color: #e11d48;"><div class="nav-item-left"><span class="nav-item-icon">🛑</span><span>Logout Account</span></div></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="main-view-heading">Overview</h1>
+                    <p id="main-view-subheading">Monitor, prioritize, and resolve product issues before users feel them.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle-btn" onclick="toggleModal('notifications-feed-modal', true)">
+                        <span>🔔</span> <span>Alert Center</span>
+                    </button>
+
+                    <button class="theme-toggle-btn" onclick="toggleThemeMode()">
+                        <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-text">Dark Mode</span>
+                    </button>
+                    
+                    <div class="profile-card">
+                        <div class="profile-img"></div>
+                        <div class="profile-info">
+                            <h4 id="display-username">Admin</h4>
+                            <p id="display-role">Admin</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-body">
+                
+                <div id="panel-overview" class="sub-panel-view active-panel">
+                    <section class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value open" id="count-open">0 <span style="font-size: 1rem; vertical-align: middle;">↑</span></div>
+                            <div class="metric-label">Open Bugs</div>
+                            <div class="metric-sub">Synced live from MongoDB</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value critical" id="count-critical">0</div>
+                            <div class="metric-label">Critical Issues</div>
+                            <div class="metric-sub">Requires immediate action</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value time" id="count-total">0</div>
+                            <div class="metric-label">Total Errors</div>
+                            <div class="metric-sub">Across full architecture</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value fixed" id="count-fixed">0</div>
+                            <div class="metric-label">Bugs Fixed</div>
+                            <div class="metric-sub">On track with sprint goal</div>
+                        </div>
+                    </section>
+
+                    <div class="columns-layout">
+                        <div class="left-column">
+                            <div class="section-box">
+                                <div class="section-header">
+                                    <h3>Recent Bugs</h3>
+                                    <div class="inline-raise-btn" onclick="toggleModal('add-ticket-modal', true)">
+                                        <span>Raise Ticket</span>
+                                        <div class="inline-raise-plus">+</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bug-list" id="bugs-container">
+                                    </div>
+                            </div>
+
+                            <div class="section-box">
+                                <div class="section-header">
+                                    <h3>Priority Breakdown</h3>
+                                </div>
+                                <div class="priority-grid">
+                                    <div class="priority-card p0">
+                                        <div class="priority-count" id="pb-critical">0</div>
+                                        <div class="priority-title"><span style="color: var(--critical);">●</span> Critical (P0)</div>
+                                        <div class="priority-desc">System crashes, payment failures.</div>
+                                    </div>
+                                    <div class="priority-card p1">
+                                        <div class="priority-count" id="pb-high">0</div>
+                                        <div class="priority-title"><span style="color: var(--high);">●</span> High (P1)</div>
+                                        <div class="priority-desc">Major features broken, severe UX bugs.</div>
+                                    </div>
+                                    <div class="priority-card p2">
+                                        <div class="priority-count" id="pb-medium">0</div>
+                                        <div class="priority-title"><span style="color: var(--medium);">●</span> Medium (P2)</div>
+                                        <div class="priority-desc">Partial feature performance issues.</div>
+                                    </div>
+                                    <div class="priority-card p3">
+                                        <div class="priority-count" id="pb-low">0</div>
+                                        <div class="priority-title"><span style="color: var(--low);">●</span> Low (P3)</div>
+                                        <div class="priority-desc">UI style mismatches, minor issues.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="right-column">
+                            <div class="section-box">
+                                <div class="section-header">
+                                    <h3>Insights Panel</h3>
+                                </div>
+                                <div id="insights-content-wrapper">
+                                    </div>
+                            </div>
+
+                            <div class="section-box">
+                                <div class="section-header">
+                                    <h3>Alert Center</h3>
+                                </div>
+                                <div class="alert-center-card" id="alert-feed-container">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-activity-log" class="sub-panel-view">
+                    <div class="section-box">
+                        <div class="section-header">
+                            <h3>Real-Time System Operations Logs</h3>
+                        </div>
+                        <table class="functional-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Event Action Traced</th>
+                                    <th>Node Scope Target</th>
+                                    <th>Status Flag</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-activity-log-rows">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="panel-active-users" class="sub-panel-view">
+                    <div class="section-box">
+                        <div class="section-header">
+                            <h3>Currently Authenticated Network Operators</h3>
+                        </div>
+                        <table class="functional-table">
+                            <thead>
+                                <tr>
+                                    <th>Operator Name</th>
+                                    <th>Access Clearance</th>
+                                    <th>Terminal Hub Address</th>
+                                    <th>Operational State</th>
+                                </tr>
+                            </thead>
+                            <tbody id="active-users-rows">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <footer class="footer-sync-notice">
+                    <span>Auto-synced with GitHub Issues & Sentry.</span>
+                    <span>Last updated 5 minutes ago.</span>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="notifications-feed-modal">
+        <div class="modal-box" style="width: 580px;">
+            <div class="modal-header">
+                <h3>🔔 Global Network Matrix Alert Center</h3>
+                <button class="modal-close-btn" onclick="toggleModal('notifications-feed-modal', false)">✕</button>
+            </div>
+            <div class="alert-center-card" id="modal-alert-feed-container" style="max-height: 450px;">
+                </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-primary" onclick="toggleModal('notifications-feed-modal', false)">Dismiss Control Feed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bug-info-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="info-modal-title">Bug Technical Scope</h3>
+                <button class="modal-close-btn" onclick="toggleModal('bug-info-modal', false)">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="bug-field-item"><strong>Reference Ticket ID:</strong> <span id="info-modal-id">#BT-0000</span></div>
+                <div class="bug-field-item"><strong>Severity Tier:</strong> <span id="info-modal-priority">None</span></div>
+                <div class="bug-field-item"><strong>Triage Phase State:</strong> <span id="info-modal-status">None</span></div>
+                <div class="bug-field-item" style="line-height: 1.5;"><strong>Architecture Failure Description:</strong> <br><span id="info-modal-desc" style="color: var(--text-muted);">No logs available.</span></div>
+                <div class="bug-field-item"><strong>Assigned Team Scope:</strong> Engineering Cluster Core Alpha</div>
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-primary" onclick="toggleModal('bug-info-modal', false)">Dismiss Scope</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="add-ticket-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Create Matrix Ticket</h3>
+                <button class="modal-close-btn" onclick="toggleModal('add-ticket-modal', false)">✕</button>
+            </div>
+            <form id="addTicketForm" onsubmit="submitNewTicket(event)">
+                <div class="form-group">
+                    <label for="ticket-title">Issue Title Description</label>
+                    <input type="text" id="ticket-title" placeholder="e.g. Memory leak on authentication pipeline" required>
+                </div>
+                <div class="form-group">
+                    <label for="ticket-priority">Vulnerability Priority</label>
+                    <select id="ticket-priority">
+                        <option value="critical">Critical (P0)</option>
+                        <option value="high">High (P1)</option>
+                        <option value="medium">Medium (P2)</option>
+                        <option value="low">Low (P3)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ticket-status">Active Pipeline Status</label>
+                    <select id="ticket-status">
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="In Review">In Review</option>
+                    </select>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="button" class="btn-secondary" onclick="toggleModal('add-ticket-modal', false)">Cancel</button>
+                    <button type="submit" class="btn-primary">Append Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bugs-inventory-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🛢.. Bug Repository Master Index</h3>
+                <button class="modal-close-btn" onclick="toggleModal('bugs-inventory-modal', false)">✕</button>
+            </div>
+            <div class="inventory-list" id="inventory-container"></div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('bugs-inventory-modal', false)">Close View</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="progress-board-modal">
+        <div class="modal-box" style="width: 700px;">
+            <div class="modal-header">
+                <h3>📋 Core System Workflow</h3>
+                <button class="modal-close-btn" onclick="toggleModal('progress-board-modal', false)">✕</button>
+            </div>
+            <div class="board-container" id="board-columns-wrapper"></div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('progress-board-modal', false)">Close Board</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bugs-resolved-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✅ Historically Fixed Issues Log</h3>
+                <button class="modal-close-btn" onclick="toggleModal('bugs-resolved-modal', false)">✕</button>
+            </div>
+            <div class="inventory-list" id="resolved-inventory-container"></div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('bugs-resolved-modal', false)">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="my-profile-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>👤 Operator Profile Information</h3>
+                <button class="modal-close-btn" onclick="toggleModal('my-profile-modal', false)">✕</button>
+            </div>
+            <div style="text-align:center; padding: 1rem 0;">
+                <div style="width:80px; height:80px; border-radius:50%; background-image:url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'); background-size:cover; margin:0 auto 1rem auto; border: 3px solid #0b2545; background-color: #cbd5e1;"></div>
+                <h3 id="profile-modal-name" style="margin-bottom:0.25rem;">Admin</h3>
+                <p id="profile-modal-role" style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Admin Status</p>
+            </div>
+            <div class="inventory-list" style="margin-top:0.5rem;">
+                <div class="inventory-item"><span>Clearance Tier</span><strong>Level 5 (Full SysOp)</strong></div>
+                <div class="inventory-item"><span>Active Terminal Network</span><strong>Matrix Core Node 01</strong></div>
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('my-profile-modal', false)">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⚙️ System Settings Control Panel</h3>
+                <button class="modal-close-btn" onclick="toggleModal('settings-modal', false)">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Terminal Sync Routine Engine</label>
+                <select id="setting-sync">
+                    <option>Real-Time Push Sync (Active)</option>
+                    <option>Manual Fetch Pull Interval</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Matrix Ambient Stream Speed</label>
+                <input type="range" min="1" max="3" value="2" style="width: 100%;">
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('settings-modal', false)">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="about-software-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🪲 About ERROR MATRIX Core</h3>
+                <button class="modal-close-btn" onclick="toggleModal('about-software-modal', false)">✕</button>
+            </div>
+            <div style="line-height:1.6; font-size:0.95rem;">
+                <p><strong>Version:</strong> v2.6.0 Stable Core</p>
+                <p><strong>Environment Build:</strong> Node-Matrix-Alpha-09</p>
+                <p style="margin-top:0.75rem; color:var(--text-muted); font-size:0.85rem;">
+                    Cybernetic platform designed for immediate system tracking, diagnostic optimization, and priority breakdown matrix sorting. Auto-synced with active webhook pipelines.
+                </p>
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('about-software-modal', false)">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="statistics-chart-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📊 Error Analytics Dashboard</h3>
+                <button class="modal-close-btn" onclick="toggleModal('statistics-chart-modal', false)">✕</button>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Graphical density visualization mapping active threat indicators:
+            </p>
+
+            <div class="chart-visual-container">
+                <div class="chart-row">
+                    <div class="chart-label-row"><span style="color: var(--critical);">Critical Density</span><span id="chart-val-critical">0 Issues</span></div>
+                    <div class="chart-bar-bg"><div id="bar-critical" class="chart-bar-fill" style="background-color: var(--critical);"></div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-label-row"><span style="color: var(--high);">High Importance</span><span id="chart-val-high">0 Issues</span></div>
+                    <div class="chart-bar-bg"><div id="bar-high" class="chart-bar-fill" style="background-color: var(--high);"></div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-label-row"><span style="color: var(--medium);">Medium Priority</span><span id="chart-val-medium">0 Issues</span></div>
+                    <div class="chart-bar-bg"><div id="bar-medium" class="chart-bar-fill" style="background-color: var(--medium);"></div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-label-row"><span style="color: var(--low);">Low Inconsistencies</span><span id="chart-val-low">0 Issues</span></div>
+                    <div class="chart-bar-bg"><div id="bar-low" class="chart-bar-fill" style="background-color: var(--low);"></div></div>
+                </div>
+            </div>
+
+            <div class="modal-footer-btns">
+                <button type="button" class="btn-secondary" onclick="toggleModal('statistics-chart-modal', false)">Dismiss Graph</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api/bugs";
+
+        let openCount = 0;
+        let criticalCount = 0;
+        let highCount = 0;
+        let mediumCount = 0;
+        let lowCount = 0;
+        let resolvedCounter = 0;
+        let totalErrorsCount = 0;
+
+        let bugsArrayData = [];
+
+        // --- THEME SWITCHER LOGIC ---
+        function toggleThemeMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            document.getElementById('theme-toggle-icon').innerText = isDark ? '☀️' : '🌙';
+            document.getElementById('theme-toggle-text').innerText = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // --- LIVE MATRIX BACKGROUND LOGIC ---
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const matrixChars = "01ERRORMATRIXBUGVULN404CRITICALSYSTEMFAIL0101";
+        const charArray = matrixChars.split("");
+        const fontSize = 14;
+        let columns = canvas.width / fontSize;
+        let drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(12, 30, 54, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillStyle = (Math.random() > 0.98) ? '#3498db' : '#00f0ff';
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+            animationFrameId = requestAnimationFrame(drawMatrix);
+        }
+        drawMatrix();
+
+        // --- GENERAL MODAL TRANSITION TRIGGER ---
+        function toggleModal(modalId, shouldShow) {
+            document.getElementById(modalId).style.display = shouldShow ? 'flex' : 'none';
+        }
+
+        // --- MONGODB REST API SYNCHRONIZATION WORKERS ---
+        async function syncDatabaseWithFrontend() {
+            try {
+                const response = await fetch(API_URL);
+                bugsArrayData = await response.json();
+                
+                // Parse pipeline datasets down to operational counters
+                openCount = bugsArrayData.filter(b => b.status !== 'Resolved').length;
+                criticalCount = bugsArrayData.filter(b => b.priority === 'critical' && b.status !== 'Resolved').length;
+                highCount = bugsArrayData.filter(b => b.priority === 'high' && b.status !== 'Resolved').length;
+                mediumCount = bugsArrayData.filter(b => b.priority === 'medium' && b.status !== 'Resolved').length;
+                lowCount = bugsArrayData.filter(b => b.priority === 'low' && b.status !== 'Resolved').length;
+                resolvedCounter = bugsArrayData.filter(b => b.status === 'Resolved').length;
+                totalErrorsCount = bugsArrayData.length;
+
+                rebuildBugsUIList();
+                updateDashboardCounters();
+                updateInsightsPanel();
+            } catch (error) {
+                console.error("Failed to map pipeline matrix elements from MongoDB:", error);
+            }
+        }
+
+        function rebuildBugsUIList() {
+            const container = document.getElementById('bugs-container');
+            container.innerHTML = '';
+            
+            if (bugsArrayData.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">No vulnerability logs active in remote MongoDB collection cluster index.</div>`;
+                return;
+            }
+
+            bugsArrayData.forEach(bug => {
+                const rawUniqueId = `bug-${bug.id.replace('#', '')}`;
+                const itemHtml = `
+                    <div class="bug-item" id="${rawUniqueId}" onclick="viewDetailedBugInfo('${bug.id}')">
+                        <div class="bug-details">
+                            <div class="bug-dot" style="background-color: var(--${bug.priority});"></div>
+                            <div>
+                                <div class="bug-title">${bug.title}</div>
+                                <div class="bug-id">${bug.id}</div>
+                            </div>
+                        </div>
+                        <div class="bug-meta">
+                            <span class="badge ${bug.priority}">${bug.priority}</span>
+                            <div class="bug-status" style="${bug.status === 'Resolved' ? 'color:var(--brand-green); font-weight:700;' : ''}">${bug.status}</div>
+                            <div class="bug-actions">
+                                <button class="bug-action-btn edit" onclick="event.stopPropagation(); editTicket('${bug.id}')">Edit</button>
+                                <button class="bug-action-btn solve" onclick="event.stopPropagation(); solveTicketInline('${rawUniqueId}', '${bug.priority}')">Solve</button>
+                                <button class="bug-action-btn delete" onclick="event.stopPropagation(); removeTicketInline('${rawUniqueId}', '${bug.priority}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>`;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        function updateDashboardCounters() {
+            document.getElementById('count-open').innerHTML = `${openCount} <span style="font-size: 1rem; vertical-align: middle;">↑</span>`;
+            document.getElementById('count-critical').innerText = criticalCount;
+            document.getElementById('count-total').innerText = totalErrorsCount;
+            document.getElementById('count-fixed').innerText = resolvedCounter;
+            
+            document.getElementById('pb-critical').innerText = criticalCount;
+            document.getElementById('pb-high').innerText = highCount;
+            document.getElementById('pb-medium').innerText = mediumCount;
+            document.getElementById('pb-low').innerText = lowCount;
+        }
+
+        function updateInsightsPanel() {
+            const insightsContainer = document.getElementById('insights-content-wrapper');
+            if(!insightsContainer) return;
+
+            let alertHtml = '';
+            let strategyHtml = '';
+
+            if (criticalCount > 0) {
+                alertHtml = `
+                    <div class="alert-box danger">
+                        <div class="alert-box-title">⚠️ Release Risk Alert</div>
+                        Unresolved core framework anomalies detected in current staging lifecycle (${criticalCount} P0 Critical Active).
+                    </div>`;
+                strategyHtml = `
+                    <div class="alert-box success">
+                        <div class="alert-box-title">💡 Recommendation</div>
+                        Target core critical errors first to optimize baseline product stability.
+                    </div>`;
+            } else if (highCount > 0 || mediumCount > 0) {
+                alertHtml = `
+                    <div class="alert-box danger" style="background-color: rgba(245, 158, 11, 0.08); border: 1px solid var(--high); color: var(--high);">
+                        <div class="alert-box-title">⚠️ System Stability Risk</div>
+                        Secondary features or validation loops reporting failures. Code freeze metrics active.
+                    </div>`;
+                strategyHtml = `
+                    <div class="alert-box success">
+                        <div class="alert-box-title">💡 Recommendation</div>
+                        Initialize minor branch testing routines to expedite standard integration passes.
+                    </div>`;
+            } else {
+                alertHtml = `
+                    <div class="alert-box success">
+                        <div class="alert-box-title">🛡️ System Secure</div>
+                        All core structural threat matrices cleared. Infrastructure executing within normal bounds.
+                    </div>`;
+                strategyHtml = `
+                    <div class="alert-box success" style="background: rgba(2, 132, 199, 0.08); border-color: var(--alert-blue); color: var(--alert-blue);">
+                        <div class="alert-box-title">💡 Infrastructure Alert</div>
+                        Ecosystem optimal. No blocking tickets active. Ready for next deployment iteration.
+                    </div>`;
+            }
+
+            insightsContainer.innerHTML = alertHtml + strategyHtml;
+        }
+
+        // --- INTERACTIVE BUG DETAILED INFORMATION POPUP ---
+        function viewDetailedBugInfo(bugId) {
+            const matchedBug = bugsArrayData.find(b => b.id === bugId);
+            if(matchedBug) {
+                document.getElementById('info-modal-title').innerText = matchedBug.title;
+                document.getElementById('info-modal-id').innerText = matchedBug.id;
+                document.getElementById('info-modal-priority').innerText = matchedBug.priority.toUpperCase();
+                document.getElementById('info-modal-status').innerText = matchedBug.status;
+                document.getElementById('info-modal-desc').innerText = matchedBug.desc || "No comprehensive diagnostics runtime stack logs saved.";
+                toggleModal('bug-info-modal', true);
+            }
+        }
+
+        // --- SIDEBAR SWITCHER LOGIC ---
+        function switchDashboardView(viewTarget) {
+            document.querySelectorAll('.sub-panel-view').forEach(panel => {
+                panel.classList.remove('active-panel');
+            });
+            document.querySelectorAll('.sidebar .nav-links .nav-item').forEach(link => {
+                link.classList.remove('active-link');
+            });
+
+            const headerTitle = document.getElementById('main-view-heading');
+            const headerSub = document.getElementById('main-view-subheading');
+
+            if (viewTarget === 'overview') {
+                document.getElementById('panel-overview').classList.add('active-panel');
+                document.getElementById('nav-overview').classList.add('active-link');
+                headerTitle.innerText = "Overview";
+                headerSub.innerText = "Monitor, prioritize, and resolve product issues before users feel them.";
+            } else if (viewTarget === 'activity-log') {
+                document.getElementById('panel-activity-log').classList.add('active-panel');
+                document.getElementById('nav-activity').classList.add('active-link');
+                headerTitle.innerText = "Activity Records";
+                headerSub.innerText = "System configuration logs, pipeline audits, and operator modifications.";
+            } else if (viewTarget === 'active-users') {
+                document.getElementById('panel-active-users').classList.add('active-panel');
+                document.getElementById('nav-users').classList.add('active-link');
+                headerTitle.innerText = "Active Sessions";
+                headerSub.innerText = "Security clearance check on internal personnel operating the cluster framework.";
+            }
+        }
+
+        // --- DYNAMIC LIVE LOG FEEDER ---
+        function fireActiveSystemLogLine() {
+            const operations = ["Analyzed heap trace indexes", "Refreshed API reverse proxy targets", "Modified system profile state", "Executed regression pipeline container", "Authorized security gateway challenge"];
+            const operators = ["Admin", "Tester", "Developer", "System Automaton Engine"];
+            const environments = ["Auth Routing Node Cluster", "Billing Orchestrator Subsystem", "Data Pipeline Ingestion Hub", "Docker Core Node-4"];
+
+            const chosenOp = operations[Math.floor(Math.random() * operations.length)];
+            const chosenUser = operators[Math.floor(Math.random() * operators.length)];
+            const chosenEnv = environments[Math.floor(Math.random() * environments.length)];
+            const timeString = new Date().toLocaleTimeString();
+
+            const tableRowTemplate = `
+                <tr>
+                    <td style="color: var(--text-muted); font-weight: 500;">${timeString}</td>
+                    <td><strong>${chosenUser}</strong> ${chosenOp}</td>
+                    <td><code>${chosenEnv}</code></td>
+                    <td><span style="color: var(--brand-green); font-weight: 700;">● STABLE ROUTINE</span></td>
+                </tr>`;
+
+            const logTableBodyContainer = document.getElementById('live-activity-log-rows');
+            if (logTableBodyContainer) {
+                logTableBodyContainer.insertAdjacentHTML('afterbegin', tableRowTemplate);
+                if (logTableBodyContainer.children.length > 10) {
+                    logTableBodyContainer.lastElementChild.remove();
+                }
+            }
+        }
+
+        for(let initialT = 0; initialT < 10; initialT++) { fireActiveSystemLogLine(); }
+        setInterval(fireActiveSystemLogLine, 4000);
+
+        // --- GLOBAL ALERT CENTER DUAL INJECTION SYSTEM ---
+        function pushAlertToCenter(title, description, cssClass, iconEmoji) {
+            const feeds = [
+                document.getElementById('alert-feed-container'),
+                document.getElementById('modal-alert-feed-container')
+            ];
+
+            feeds.forEach(feedContainer => {
+                if (feedContainer) {
+                    const alertNode = document.createElement('div');
+                    alertNode.className = `alert-center-item ${cssClass}`;
+                    alertNode.innerHTML = `
+                        <div class="alert-icon-wrapper">${iconEmoji}</div>
+                        <div class="alert-content-group">
+                            <div class="alert-header-row"><span class="alert-label-title">${title}</span><span class="alert-timestamp">Just Now</span></div>
+                            <div class="alert-description-text">${description}</div>
+                        </div>`;
+                    feedContainer.insertBefore(alertNode, feedContainer.firstChild);
+                }
+            });
+        }
+
+        function seedInitialAlertFeed() {
+            pushAlertToCenter('Release Notification', 'System patch v2.6.0 successfully staged to active nodes.', 'release', '🚀');
+            pushAlertToCenter('Deadline Reminder', 'Sprint completion cutoff threshold approaching in 15 hours.', 'deadline', '⏳');
+            pushAlertToCenter('New Bug Assigned', 'Database collection pipelines connected and synchronized.', 'assigned', '⚡');
+        }
+
+        // --- SIDEPANEL REDIRECT LINK MODAL TRIGGERS ---
+        function showAllBugsInventory() {
+            const inventoryContainer = document.getElementById('inventory-container');
+            inventoryContainer.innerHTML = '';
+            bugsArrayData.forEach(bug => {
+                const itemNode = document.createElement('div');
+                itemNode.className = 'inventory-item';
+                itemNode.innerHTML = `
+                    <div><strong style="color:#0b2545;">${bug.id}</strong> - ${bug.title}</div>
+                    <div><span class="badge ${bug.priority}">${bug.priority}</span></div>`;
+                inventoryContainer.appendChild(itemNode);
+            });
+            toggleModal('bugs-inventory-modal', true);
+        }
+
+        function showProgressBoard() {
+            const wrapper = document.getElementById('board-columns-wrapper');
+            wrapper.innerHTML = `
+                <div class="board-col"><div class="board-col-title">Open</div><div id="col-open-cards"></div></div>
+                <div class="board-col"><div class="board-col-title">In Progress</div><div id="col-progress-cards"></div></div>
+                <div class="board-col"><div class="board-col-title">In Review</div><div id="col-review-cards"></div></div>`;
+            bugsArrayData.forEach(bug => {
+                if (bug.status !== 'Resolved') {
+                    const card = document.createElement('div');
+                    card.className = 'board-card';
+                    card.style.borderLeft = `3px solid var(--${bug.priority})`;
+                    card.innerText = `${bug.id}: ${bug.title}`;
+                    if (bug.status === 'Open') document.getElementById('col-open-cards').appendChild(card);
+                    else if (bug.status === 'In Progress') document.getElementById('col-progress-cards').appendChild(card);
+                    else document.getElementById('col-review-cards').appendChild(card);
+                }
+            });
+            toggleModal('progress-board-modal', true);
+        }
+
+       function showBugsResolved() {
+            const container = document.getElementById('resolved-inventory-container');
+            container.innerHTML = '';
+            bugsArrayData.forEach(bug => {
+                if(bug.status === 'Resolved') {
+                    const node = document.createElement('div');
+                    node.className = 'inventory-item';
+                    node.style.borderLeft = '4px solid var(--brand-green)';
+                    node.innerHTML = `<div><strong>${bug.id}</strong> - ${bug.title}</div><span class="badge" style="background:#d1fae5; color:#065f46;">Fixed</span>`;
+                    container.appendChild(node);
+                }
+            });
+            if (container.children.length === 0) {
+                container.innerHTML = '<div style="font-size:0.88rem; color:var(--text-muted);">No solved tickets recorded yet.</div>';
+            }
+            toggleModal('bugs-resolved-modal', true);
+        }
+
+        function showStatisticsChartModal() {
+            toggleModal('statistics-chart-modal', true);
+            const total = Math.max(1, bugsArrayData.length);
+            document.getElementById('bar-critical').style.width = ((criticalCount / total) * 100) + '%';
+            document.getElementById('bar-high').style.width = ((highCount / total) * 100) + '%';
+            document.getElementById('bar-medium').style.width = ((mediumCount / total) * 100) + '%';
+            document.getElementById('bar-low').style.width = ((lowCount / total) * 100) + '%';
+
+            document.getElementById('chart-val-critical').innerText = `${criticalCount} Issues`;
+            document.getElementById('chart-val-high').innerText = `${highCount} Issues`;
+            document.getElementById('chart-val-medium').innerText = `${mediumCount} Issues`;
+            document.getElementById('chart-val-low').innerText = `${lowCount} Issues`;
+        }
+
+        function showMyProfile() { toggleModal('my-profile-modal', true); }
+        function showAboutSoftware() { toggleModal('about-software-modal', true); }
+        function showSettingsModal() { toggleModal('settings-modal', true); }
+
+        // --- DYNAMIC TICKET ACTIONS WRITTEN DIRECTLY TO MONGODB ---
+        function editTicket(bugId) {
+            pushAlertToCenter('Comment Added', `Modification trace initiated on item ${bugId}.`, 'comment', '💬');
+            alert(`Initializing secure environment to edit database ticket record: ${bugId}`);
+        }
+
+        async function solveTicketInline(domElementId, priority) {
+            const item = document.getElementById(domElementId);
+            if (!item) return;
+            const targetId = item.querySelector('.bug-id').innerText;
+
+            try {
+                const response = await fetch(`${API_URL}/${encodeURIComponent(targetId)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'Resolved' })
+                });
+
+                if (response.ok) {
+                    await syncDatabaseWithFrontend();
+                    pushAlertToCenter('Bug Closed', `Anomaly record ${targetId} flagged fixed in MongoDB.`, 'closed', '✅');
+                }
+            } catch (err) {
+                console.error("Failed to commit resolved update to cluster database infrastructure:", err);
+            }
+        }
+
+        async function removeTicketInline(domElementId, priority) {
+            const item = document.getElementById(domElementId);
+            if (!item) return;
+            const targetId = item.querySelector('.bug-id').innerText;
+
+            try {
+                const response = await fetch(`${API_URL}/${encodeURIComponent(targetId)}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await syncDatabaseWithFrontend();
+                    pushAlertToCenter('Priority Updated', `Ticket drop transaction verified. Removed handle ${targetId} from MongoDB.`, 'priority', '⚙️');
+                }
+            } catch (err) {
+                console.error("Remote cluster dropped deletion query action request:", err);
+            }
+        }
+
+        async function submitNewTicket(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('ticket-title').value;
+            const priority = document.getElementById('ticket-priority').value;
+            const status = document.getElementById('ticket-status').value;
+            const generatedId = "#BT-" + Math.floor(2000 + Math.random() * 9000);
+
+            const newBugPayload = {
+                id: generatedId,
+                title: title,
+                priority: priority,
+                status: status,
+                desc: `Custom diagnostic ticket initialized inside production database logs context.`
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newBugPayload)
+                });
+
+                if (response.ok) {
+                    await syncDatabaseWithFrontend();
+                    document.getElementById('addTicketForm').reset();
+                    toggleModal('add-ticket-modal', false);
+                    pushAlertToCenter('New Bug Assigned', `Allocation handle ${generatedId} appended seamlessly to database collection backend.`, 'assigned', '⚡');
+                }
+            } catch (err) {
+                alert("Database transmission layer disconnected.");
+            }
+        }
+
+        // --- SECURITY ROUTING MODULES ---
+        async function handleLogin(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('username').value;
+            const chosenRole = document.getElementById('user-role').value;
+
+            document.getElementById('display-username').innerText = usernameInput;
+            document.getElementById('display-role').innerText = chosenRole + " Clearance";
+            
+            document.getElementById('profile-modal-name').innerText = usernameInput;
+            document.getElementById('profile-modal-role').innerText = chosenRole + " Operator Status";
+
+            // Populate Active Roles Tables
+            const activeUserTBody = document.getElementById('active-users-rows');
+            activeUserTBody.innerHTML = '';
+            
+            activeUserTBody.innerHTML += `
+                <tr>
+                    <td><strong>${usernameInput} (You)</strong></td>
+                    <td>${chosenRole} Master SysOp</td>
+                    <td><code>Node-Matrix-01</code></td>
+                    <td><span class="pulse-indicator"></span> Connected Active</td>
+                </tr>`;
+
+            const fallbackSystemRoles = ["Admin", "Tester", "Developer"];
+            fallbackSystemRoles.forEach((roleName, index) => {
+                if(roleName.toLowerCase() !== chosenRole.toLowerCase()) {
+                    const nodeIndex = 3 + index;
+                    activeUserTBody.innerHTML += `
+                        <tr>
+                            <td><strong>${roleName} Session</strong></td>
+                            <td>External ${roleName} Engine</td>
+                            <td><code>Node-Matrix-0${nodeIndex}</code></td>
+                            <td><span class="pulse-indicator"></span> Connected Active</td>
+                        </tr>`;
+                }
+            });
+
+            // Trigger dynamic data synchronization pull from MongoDB on login
+            await syncDatabaseWithFrontend();
+            seedInitialAlertFeed();
+
+            cancelAnimationFrame(animationFrameId);
+
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                loginScreen.style.display = 'none';
+                document.getElementById('dashboard-screen').style.display = 'flex';
+            }, 500);
+        }
+
+        function handleLogout() {
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.style.display = 'flex';
+            resizeCanvas();
+            drawMatrix();
+            
+            document.getElementById('alert-feed-container').innerHTML = '';
+            document.getElementById('modal-alert-feed-container').innerHTML = '';
+            
+            setTimeout(() => {
+                loginScreen.style.opacity = '1';
+                document.getElementById('dashboard-screen').style.display = 'none';
+            }, 50);
+        }
+    </script>
+</body>
+</html>
